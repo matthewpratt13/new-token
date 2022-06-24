@@ -1,17 +1,22 @@
 import { ethers } from "hardhat";
 import { Contract, ContractFactory, Signer } from "ethers";
 import { expect } from "chai";
-import "@nomiclabs/hardhat-waffle";
 
 describe("NewToken", function () {
     let accounts: Signer[];
+    let deployer: Signer;
     let NewToken: ContractFactory;
-    let Newt: Contract;
+    let newt: Contract;
+
+    async function getDeployer(): Promise<Signer> {
+        return accounts[0];
+    }
 
     beforeEach(async function () {
         accounts = await ethers.getSigners();
-        NewToken = await ethers.getContractFactory("NewToken"); // automatically finds token definition
-        Newt = await NewToken.connect(accounts[0]).deploy();
+        deployer = await getDeployer();
+        NewToken = await ethers.getContractFactory("NewToken");
+        newt = await NewToken.connect(deployer).deploy();
     });
 
     it("prints accounts", async function () {
@@ -21,16 +26,25 @@ describe("NewToken", function () {
     });
 
     it("mints NEWT", async function () {
-        expect(await Newt.balanceOf(Newt.address)).to.equal(0);
-        console.log(await Newt.totalSupply(), "NEWT minted");
+        await expect(await newt.balanceOf(deployer.getAddress())).to.equal(
+            await newt.totalSupply()
+        );
+
+        console.log(await newt.totalSupply(), "NEWT minted");
     });
 
     it("burns NEWT", async function () {
-        let numTokens = 12.9;
+        let numTokens = 678.9;
         numTokens = Math.floor(numTokens);
 
-        expect(numTokens > 0 && numTokens <= 3141592);
-        Newt.burn(numTokens);
+        await expect(numTokens > 0 && numTokens <= newt.totalSupply());
+        await newt.burn(numTokens);
+
         console.log(numTokens, "NEWT burned");
+        console.log(
+            "New Balance:",
+            await newt.balanceOf(deployer.getAddress()),
+            "NEWT"
+        );
     });
 });
